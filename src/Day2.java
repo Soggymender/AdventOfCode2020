@@ -87,6 +87,18 @@ public class Day2
         }
 
         // 2nd loop for password parse. No conditions needed other than loop condition.
+        
+        char loChar = line.charAt(i + lo - 1);
+        char hiChar = line.charAt(i + hi - 1);
+
+        boolean loValid = loChar == key;
+        boolean hiValid = hiChar == key;
+
+        if ((loValid || hiValid) && !(loValid && hiValid)) {
+            return 1;
+        }
+
+        /*
         for (; i < line.length(); i++) {
 
             if (line.charAt(i) == key) {
@@ -97,6 +109,7 @@ public class Day2
         if (keyCount >= lo && keyCount <= hi) {
             return 1;
         }
+        */
 
         return 0;
     }
