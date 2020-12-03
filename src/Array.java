@@ -44,7 +44,7 @@ public class Array {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     int val = Integer.parseInt(line);
-                    OrderedInsert(val);
+                    orderedInsert(val);
                 }
 
                 reader.close();
@@ -54,7 +54,7 @@ public class Array {
         }
     }
 
-    void OrderedInsert(int value) {
+    void orderedInsert(int value) {
 
         for (int i = end; i > 0; i--) {
 
@@ -72,7 +72,7 @@ public class Array {
         end++;
     } 
 
-    public int BinarySearch(int value) {
+    public int binarySearch(int value) {
 
         int low = 0;
         int high = end - 1;
@@ -92,12 +92,40 @@ public class Array {
                 high = mid - 1;
             }
 
-        } while (low != high);
+        } while (low <= high);
 
         return -1;
     }
 
-    public void Display() {
+    public int findComponentsOf(int total, int n, int low) {
+
+        // At depth. Last shot.
+        if (n == 1) {
+            int idx = binarySearch(total);
+            if (idx != -1) {
+                System.out.println(n + ": " + elements[idx]);
+            }
+
+            return idx;
+        }
+
+        // Work.
+        for (int i = low; i < end; i++) {
+
+            int a = elements[i];
+            int b = total - a;
+
+            int idx = findComponentsOf(b, n - 1, i + 1);
+            if (idx != -1) {
+                System.out.println(n + ": " + elements[i]);
+                return idx;
+            }
+        }
+        
+        return -1;
+    }
+
+    public void display() {
 
         for (int i = 0; i < end; i++) {
             if (i > 0) {
