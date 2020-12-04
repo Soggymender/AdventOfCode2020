@@ -15,15 +15,15 @@ public class Day3
         try{
             reader = new BufferedReader(new FileReader("day3_input.txt"));
 
-            int numTrees = 0;
+            int[] slopesX = { 1, 3, 5, 7, 1 };
+            int[] slopesY = { 1, 1, 1, 1, 2 };
 
-            int mapX = 0;
-//          int mapY = 0;
+            int numTrees[] = new int[5];
+
+            int[] mapX = { 0, 0, 0, 0, 0 };
+            int mapY = 0;
 
             int effectiveX = 0;
-
-            int slopeX = 3;
-//          int slopeY = 1;
 
             String line = reader.readLine();
             int mapWidth = line.length();
@@ -32,33 +32,33 @@ public class Day3
 
             do {
 
-                effectiveX = mapX % mapWidth;
+                for (int i = 0; i < 5; i++) {
 
-                c = line.charAt(effectiveX);
-                if (c == '#') {
-                    numTrees++;
-                }
+                    // 5th slope only increments X on 0 and every other line.
+                    if (i < 4 || mapY == 0 || ((mapY % (slopesY[i])) == 0)) {
 
-                mapX += slopeX;
-//              mapY += slopeY;
+                        effectiveX = mapX[i] % mapWidth;
 
-//              if (slopeY == 1) {
-                    line = reader.readLine();
-/*              } else {
-                    // Futureproof?.
-                    for (int i = 0; i < slopeY; i++) {
-                        line = reader.readLine();
-                        if (line == null) {
-                            break;
+                        c = line.charAt(effectiveX);
+                        if (c == '#') {
+                            numTrees[i]++;
                         }
+
+                        mapX[i] += slopesX[i];
                     }
                 }
-*/
+
+                mapY++;
+
+                line = reader.readLine();
+
             } while (line != null);
 
             reader.close();
 
-            System.out.println(numTrees);
+            long result = (long)numTrees[0] * (long)numTrees[1] * (long)numTrees[2] * (long)numTrees[3] * (long)numTrees[4];
+
+            System.out.println(result);
 
         } catch (Exception e) {
             System.out.println(e);
