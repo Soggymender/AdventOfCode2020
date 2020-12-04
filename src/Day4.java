@@ -54,7 +54,11 @@ public class Day4
             // Parse the file lines, accumulating by sums within each passport, and when a passport ends
             // check the byte sums.
             int curFieldIdxSum = 0;
+            int curFieldIdx = 0;
             String curField = new String();
+            String curValue = new String();
+
+            String[] allValues = new String[reqFields.length];
 
             boolean inField = true;
 
@@ -68,6 +72,8 @@ public class Day4
                     // Check passport validity.
                     if (curFieldIdxSum == reqFieldIdxSum) {
                         valid++;
+
+                        // Now its valid to burn the time checking the field values against the rules.
                     }
 
                     inField = true;
@@ -88,15 +94,24 @@ public class Day4
                             // If the field is valid, sum it's index.
                             Integer idx = reqFieldsHash.get(curField);
                             if (idx != null) {
-                                curFieldIdxSum += (int)idx;
+                                curFieldIdx = (int)idx;
+                                curFieldIdxSum += curFieldIdx;
                             }
 
                             curField = "";
+                            curValue = "";
                             continue;
                         }
                     } else {
                         // Looking to start field.
                         if (c == ' ' || i == 0) {
+
+                            if (c == ' ') {
+                                // Store the value for additional parsing and rules check once the passport
+                                // fields are all validated.
+                                allValues[curFieldIdx - 1] = curValue;
+                            }
+
                             inField = true;
                             continue;
                         }
@@ -104,8 +119,13 @@ public class Day4
 
                     if (inField) {
                         curField += c;
+                    } else {
+                        curValue += c;
                     }
                 }
+
+                // End of line. Store the current value.
+                allValues[curFieldIdx - 1] = curValue;
 
                 inField = true;
             }
