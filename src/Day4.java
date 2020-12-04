@@ -4,6 +4,26 @@ import java.time.Instant;
 import java.io.BufferedReader;
 import java.io.FileReader;
 
+import java.util.*;
+
+
+
+enum RuleType {
+    MINMAX,
+    MINMAX_SUFFIX,
+
+
+}
+
+
+class Rule {
+
+
+
+
+}
+
+
 public class Day4
 {
     public static void main( String[] args )
@@ -21,27 +41,21 @@ public class Day4
 
             int valid = 0;
 
-            String[] reqFields = { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid" };
+            Hashtable<String, Integer> reqFieldsHash = new Hashtable<String, Integer>();
 
-            int reqChecksum1 = 0;
-            int reqChecksum2 = 0;
+            String[] reqFields = { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" };
 
-            // Sum byte values of the two acceptable field sets.
+            int reqFieldIdxSum = 0;
             for (int i = 0; i < reqFields.length; i++) {
-
-                for (int j = 0; j < reqFields[i].length(); j++) {
-                    reqChecksum1 += (int)reqFields[i].charAt(j);
-                }
-
-                if (i < reqFields.length - 1) {
-                    // Copy checksum 1 into 2 up to "cid", which is skipped.
-                    reqChecksum2 = reqChecksum1;
-                }
+                reqFieldsHash.put(reqFields[i], i + 1);
+                reqFieldIdxSum += i + 1;
             }
 
             // Parse the file lines, accumulating by sums within each passport, and when a passport ends
             // check the byte sums.
-            int curChecksum = 0;
+            int curFieldIdxSum = 0;
+            String curField = new String();
+
             boolean inField = true;
 
             String line;
@@ -52,12 +66,12 @@ public class Day4
                 if (line.length() == 0) {
 
                     // Check passport validity.
-                    if (curChecksum == reqChecksum1 || curChecksum == reqChecksum2) {
+                    if (curFieldIdxSum == reqFieldIdxSum) {
                         valid++;
                     }
 
                     inField = true;
-                    curChecksum = 0;
+                    curFieldIdxSum = 0;
                     continue;
                 }
 
@@ -70,6 +84,14 @@ public class Day4
                         // Looking to end field.
                         if (c == ':') {
                             inField = false;
+
+                            // If the field is valid, sum it's index.
+                            Integer idx = reqFieldsHash.get(curField);
+                            if (idx != null) {
+                                curFieldIdxSum += (int)idx;
+                            }
+
+                            curField = "";
                             continue;
                         }
                     } else {
@@ -81,7 +103,7 @@ public class Day4
                     }
 
                     if (inField) {
-                        curChecksum += (int)c;
+                        curField += c;
                     }
                 }
 
@@ -89,7 +111,8 @@ public class Day4
             }
 
             // Check the final passport.
-            if (curChecksum == reqChecksum1 || curChecksum == reqChecksum2) {
+            // Check passport validity.
+            if (curFieldIdxSum == reqFieldIdxSum) {
                 valid++;
             }
 
