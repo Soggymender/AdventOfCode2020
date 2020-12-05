@@ -6,53 +6,54 @@ import java.io.FileReader;
 
 import java.util.*;
 
-
-
-enum RuleType {
-    MINMAX,
-    MINMAX_SUFFIX,
-
-
-}
-
-
-class Rule {
-
-
-
-
-}
-
-
 public class Day4
 {
+    // Hash to index (which doubles as a checksum).
+    // Used to determine if a key is a recogized / required one, where to store the value in an array,
+    // and to sum the required keys to make sure they are all present.
+    Hashtable<String, Integer> reqFieldsHash = new Hashtable<String, Integer>();
+    Hashtable<String, Integer> eyeColorsHash = new Hashtable<String, Integer>();
+
+    String[] reqFields = { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"};
+    String[] eyeColors = { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
+
+    int reqFieldIdxSum = 0;
+
     public static void main( String[] args )
     {
+        Day4 day4 = new Day4();
+
         Instant start = Instant.now();
 
-        // Use a byte sum process to "approximate" whether a passport is valid. This is very easily
-        // spoofed by a "nation" with certain invalid codes. Lets not use this at a real airport.
-        // But it happens to work for the input data.
+        day4.checkPassports();
 
+        Instant end = Instant.now();
+        Duration timeElapsed = Duration.between(start, end); 
+
+        System.out.println((timeElapsed.toMillis()));
+    }
+
+    public void checkPassports() {
+    
         // Parse lines.
         BufferedReader reader;
         try{
             reader = new BufferedReader(new FileReader("day4_input.txt"));
 
-            int valid = 0;
+            int validFields = 0; // Total passports with valid fields.
+            int valid = 0;  // Subset of the above with valid values.
 
-            Hashtable<String, Integer> reqFieldsHash = new Hashtable<String, Integer>();
-
-            String[] reqFields = { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" };
-
-            int reqFieldIdxSum = 0;
+            // Build required fields hash.
             for (int i = 0; i < reqFields.length; i++) {
                 reqFieldsHash.put(reqFields[i], i + 1);
                 reqFieldIdxSum += i + 1;
             }
 
-            // Parse the file lines, accumulating by sums within each passport, and when a passport ends
-            // check the byte sums.
+            // Build eye color hash.
+            for (int i = 0; i < eyeColors.length; i++) {
+                eyeColorsHash.put(eyeColors[i], i + 1);
+            }
+
             int curFieldIdxSum = 0;
             int curFieldIdx = 0;
             String curField = new String();
@@ -71,9 +72,8 @@ public class Day4
 
                     // Check passport validity.
                     if (curFieldIdxSum == reqFieldIdxSum) {
-                        valid++;
-
-                        // Now its valid to burn the time checking the field values against the rules.
+                        validFields++;
+                        valid += validatePassport(allValues);
                     }
 
                     inField = true;
@@ -96,6 +96,8 @@ public class Day4
                             if (idx != null) {
                                 curFieldIdx = (int)idx;
                                 curFieldIdxSum += curFieldIdx;
+                            } else {
+                                curFieldIdx = -1;
                             }
 
                             curField = "";
@@ -109,7 +111,8 @@ public class Day4
                             if (c == ' ') {
                                 // Store the value for additional parsing and rules check once the passport
                                 // fields are all validated.
-                                allValues[curFieldIdx - 1] = curValue;
+                                if (curFieldIdx != -1)
+                                    allValues[curFieldIdx - 1] = curValue;
                             }
 
                             inField = true;
@@ -125,28 +128,133 @@ public class Day4
                 }
 
                 // End of line. Store the current value.
-                allValues[curFieldIdx - 1] = curValue;
+                if (curFieldIdx != -1)
+                    allValues[curFieldIdx - 1] = curValue;
 
                 inField = true;
             }
 
             // Check the final passport.
-            // Check passport validity.
             if (curFieldIdxSum == reqFieldIdxSum) {
-                valid++;
+                valid += validatePassport(allValues);
             }
 
             reader.close();
 
-            System.out.println(valid);
+            System.out.println(validFields + " / " + valid);
 
         } catch (Exception e) {
             System.out.println(e);
         }
+    }
 
-        Instant end = Instant.now();
-        Duration timeElapsed = Duration.between(start, end); 
+    private int validatePassport(String[] values) {
 
-        System.out.println((timeElapsed.toMillis()));
+        for (int i = 0; i < reqFields.length; i++) {
+            
+            String valString = values[i];
+
+            int val = -1;
+
+            // Just going to parse this for the year formats all in one spot.
+            if (i <= 2)  {
+                try {
+                    val = Integer.parseInt(valString);
+                } catch (Exception e) {
+                    return 0;
+                }
+            }
+
+            switch (i) {
+
+                case 0:
+                    if (valString.length() != 4)
+                        return 0;
+                    
+                    if (val < 1920 || val > 2002)
+                        return 0;
+
+                    break;
+
+                case 1:
+                    if (valString.length() != 4)
+                        return 0;
+                    
+                    if (val < 2010 || val > 2020)
+                        return 0;
+
+                    break;
+
+                case 2:
+                    if (valString.length() != 4)
+                        return 0;
+                    
+                    if (val < 2020 || val > 2030)
+                        return 0;
+
+                    break;
+
+                case 3:
+
+                    if (valString.endsWith("cm")) {
+
+                        valString = valString.substring(0, valString.length() - 2);
+                        val = Integer.parseInt(valString);
+                        if (val < 150 || val > 193)
+                            return 0;
+
+                        break;
+
+                    } else if (valString.endsWith("in")) {
+                        valString = valString.substring(0, 2);
+                        val = Integer.parseInt(valString);
+                        if (val < 59 || val > 76)
+                            return 0;
+
+                        break;
+                    } 
+
+                    return 0;
+
+                case 4:
+                    
+                    if (valString.length() != 7)
+                        return 0;
+
+                    if (valString.charAt(0) != '#')
+                        return 0;
+
+                    try {
+                        Long.parseLong(valString.substring(1), 16);
+                        break;
+                    } catch (Exception e) {
+                        return 0;
+                    }
+
+                case 5:
+
+                    if (!eyeColorsHash.containsKey(valString))
+                        return 0;
+
+                    break;
+
+                case 6:
+
+                    if (valString.length() != 9)
+                        return 0;
+
+                    try {
+                        Long.parseLong(valString.substring(1), 10);
+                        break;
+                    } catch (Exception e) {
+                        return 0;
+                    }
+
+                default:
+                    break;
+            }
+        }
+
+        return 1;
     }
 }
