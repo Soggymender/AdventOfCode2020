@@ -29,7 +29,9 @@ public class Day5
         try{
             reader = new BufferedReader(new FileReader("day5_input.txt"));
 
+            int lowestSeatId = 1000;
             int highestSeatId = -1;
+            long seatIdSum = 0;
 
             int lo;
             int hi; 
@@ -86,14 +88,33 @@ public class Day5
                 col = lo;
 
                 seatId = row * 8 + col;
+
+                seatIdSum += seatId;
+
                 if (seatId > highestSeatId) {
                     highestSeatId = seatId;
+                } else if (seatId < lowestSeatId) {
+                    lowestSeatId = seatId;
                 }
             }
            
             reader.close();
 
-            System.out.println(highestSeatId);
+            // The missing seat id is the total of the expected seat ids minus the total of the actual seat ids.
+
+            long expectedSeatIdSum = 0;
+            // Initial test before trying harder.
+            // for (int i = lowestSeatId; i <= highestSeatId; i++) {
+            //    expectedSeatIdSum += i;
+            // } 
+
+            // Not going to lie. I had to look this up. This will give the same result as the loop above.
+            expectedSeatIdSum = (highestSeatId * (highestSeatId + 1)) / 2;
+            expectedSeatIdSum -= ((lowestSeatId - 1) * lowestSeatId) / 2;
+
+            long missingSeatId = expectedSeatIdSum - seatIdSum;
+
+            System.out.println(highestSeatId + ", " + missingSeatId);
 
         } catch (Exception e) {
             System.out.println(e);
