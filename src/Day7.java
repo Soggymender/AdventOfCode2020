@@ -219,34 +219,33 @@ public class Day7
 
         // Iterate the top level rules.
         for (int i = 0; i < rules.contained.size(); i++) {
-            if (rules.contained.get(i).containerName.equals(name)) {
+            if (!rules.contained.get(i).containerName.equals(name)) {
                 continue;
             }
-            total += countOptionsRec(rules, rules.contained.get(i), name, 0);
+            total += countOptionsRec(rules, rules.contained.get(i), name);
         } 
 
         return total;
     }
 
-    int countOptionsRec(Rule rules, Rule rule, String name, int total) {
+    int countOptionsRec(Rule rules, Rule rule, String name) {
         
-        // If this rule contains name, return +1.
-        if (rule.containerName.equals(name) || rule.getIdx(name) != -1) {
-            return 1;
+        int total = 0;
+
+        // Don't count the gold bag.
+        if (!rule.containerName.equals(name)) {
+            total = 1;
         }
-        
+
         for (int i = 0; i < rule.contained.size(); i++) {
 
-            // Get the name of this contained rule.
-            // Get the rule from the list.
-
             int rulesIdx = rules.getIdx(rule.contained.get(i).containerName);
+            Rule curRule = rules.contained.get(rulesIdx);
+            int count = rule.containedCounts.get(i);
 
-            if (countOptionsRec(rules, rules.contained.get(rulesIdx), name, 0) > 0) {
-                return 1;
-            };           
+            total += count * countOptionsRec(rules, curRule, name);
         }
 
-        return 0;
+        return total;
     }
 }
