@@ -18,7 +18,6 @@ class Instruction
 {
     Code code = Code.none;
     int  arg = 0;
-    int  callCount = 0;
 }
 
 public class Day8
@@ -32,7 +31,7 @@ public class Day8
         Instant start = Instant.now();
 
         day8.parse();
-        day8.execute();
+        day8.execute(0, 0, false);
 
         Instant end = Instant.now();
         Duration timeElapsed = Duration.between(start, end); 
@@ -101,20 +100,47 @@ public class Day8
         }
     }
 
-    void execute() {
+    // At each nop or jmp instruction flip to the other and execute a branch. If the branch completes return true.
+    // Only the initial execution may branch because only one instruction can be modified.
+    // Each base / branch execution tracks its own call counts for loop detection.
+    boolean execute(int ipStart, int accStart, boolean inBranch) {
 
-        int ip = 0;
-        int acc = 0;
+        int ip = ipStart;
+        int acc = accStart;
         Instruction inst = null;
+
+        int[] callCounts = new int[instructions.size()];
 
         while (ip < instructions.size()) {
 
             inst = instructions.get(ip);
 
-            if (inst.callCount > 0) {
-                System.out.println(acc);
-                break;
+            // Flip this instruction and check for completion.
+            if (!inBranch) {
+                
+                if (inst.code == Code.nop) {
+                    inst.code = Code.jmp;
+                    if (execute(ip,acc, true)) {
+                        return true;
+                    }
+                    inst.code = Code.nop;
+                }
+
+                if (inst.code == Code.jmp) {
+                    inst.code = Code.nop;
+                    if (execute(ip, acc, true)) {
+                        return true;
+                    }
+                    inst.code = Code.jmp;
+                }
             }
+
+            if (callCounts[ip] > 0) {
+                // Loop detected. Failure.
+                return false;
+            }
+
+            callCounts[ip]++;
 
             switch (inst.code) {
 
@@ -134,8 +160,9 @@ public class Day8
                 default:
                     break;
             }
-
-            inst.callCount++;
         }
+
+        System.out.println("Repaired! " + acc);
+        return true;
     }
 }
