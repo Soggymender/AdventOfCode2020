@@ -52,8 +52,11 @@ public class Day10
             {
                 reader = new BufferedReader(new FileReader("day10_input.txt"));
 
-                elements = new int[lineCount];
+                elements = new int[ 1 + lineCount + 1];
                 int val;
+
+                elements[0] = 0; // This saves a lot of conditions later.
+                end++;
 
                 String line;
         
@@ -67,6 +70,9 @@ public class Day10
                     line = reader.readLine();
                 }
             
+                elements[end] = elements[end - 1] + 3;
+                end++;
+
                 reader.close();
             }
 
@@ -79,12 +85,9 @@ public class Day10
     }
 
     /*
-    I realized this could have been a bit cleaner if I'd just put the "port" and "device" on the sorted list
-    as bookends, then I could remove the various checks for 0 and end - 1.
-    
-    Iterate the list once. Find sections of contiguous "adapters" that can be removed individually.
-    After exiting a section mark it with a lo and hi index, and send it to a branch permutation checker
-    that runs all combinations from lo to hi. That also branches to find all combinations.
+    Iterate the sorted list once. Find sections of contiguous "adapters" that can be removed individually.
+    Track the lo and hi indices of the current section. Upon exiting a section pass it in to a branching
+    permutation counter.
 
     Multiply the section counts together.
 
@@ -93,41 +96,34 @@ public class Day10
     that need to be manually checked.
     */
     void spaceHeater() {
-
-      
+  
         int delta;
-        int temp;
-
-        int lo = -1;
+    
+        int lo = 0;
         int hi = 0;
 
         int sectionLength = 0;
-        int sections = 1;
-
+ 
         result = 1; // Add the unmodified permutation.
 
-        for (int i = 0; i < end; i++) {
-            
-            if (i == 0)
-                delta = elements[i + 1]; // Power port.
-            else if (i == end - 1)
-                delta = 99; // Last element before device. Have to keep this one
+        for (int i = 1; i < end - 1; i++) {
+
+            if (i == end - 2) 
+                delta = 99; // Force quit. Last element before device. Have to keep this one
             else
                 delta = elements[i + 1] - elements[i - 1];
             
             // Can this value be removed?
             if (delta <= 3) {
-
                 sectionLength++;
             } else {
 
                 // Found one that can't be removed.
-                // If there were previous ones that could be removed, they form a section.
-
+                // Update lo and hi so they bound the section with static "adapters".
                 if (sectionLength == 0) {
-                    lo = i;
+                    lo = i; // Haven't found a section yet.
                 } else {
-                    hi = i;
+                    hi = i; // Exiting the section.
 
                     long sectionCount = countSectionPermutations(lo, hi);
                     result *= sectionCount;
@@ -148,11 +144,7 @@ public class Day10
 
         for (int i = lo + 1; i < hi; i++) {
             
-            if (i == 0)
-                // -1 is 0 (the outlet), 0 is being removed, the difference between element 1 and -1 is the value of element 1.
-                delta = elements[i + 1];
-            else
-                delta = elements[i + 1] - elements[i - 1];
+            delta = elements[i + 1] - elements[i - 1];
             
             // Can this value be removed?
             if (delta <= 3) {
