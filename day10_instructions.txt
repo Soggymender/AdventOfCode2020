@@ -1,3 +1,39 @@
+1
+2
+3
+4
+7
+8
+9
+10
+11
+14
+17
+18
+19
+20
+23
+24
+25
+28
+31
+32
+33
+34
+35
+38
+29
+42
+45
+46
+47
+48
+49
+
+
+
+
+
 --- Day 10: Adapter Array ---
 Patched into the aircraft's data port, you discover weather forecasts of a massive tropical storm. Before you can figure out whether it will impact your vacation plans, however, your device suddenly turns off!
 
@@ -78,3 +114,5 @@ Here is a larger example:
 In this larger example, in a chain that uses all of the adapters, there are 22 differences of 1 jolt and 10 differences of 3 jolts.
 
 Find a chain that uses all of your adapters to connect the charging outlet to your device's built-in adapter and count the joltage differences between the charging outlet, the adapters, and your device. What is the number of 1-jolt differences multiplied by the number of 3-jolt differences?
+
+
