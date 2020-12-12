@@ -17,6 +17,11 @@ public class Day11
 
     byte[] map = null;
 
+    byte[] toSmall;
+    byte[] toBig;
+
+    boolean lo = true;
+
     public static void main( String[] args )
     {
         Day11 day11 = new Day11();
@@ -69,6 +74,20 @@ public class Day11
             }
 
             {   
+                /* Convert to a character set that can fit in 4 bits. 
+                   Duplicate the map state in both hi and lo order bits. */
+                toSmall = new byte[77];
+                toBig = new byte[4];
+
+                // Bit shift to make sure we get entirely unique bit patterns for masking.
+                toSmall['#'] = 1;
+                toSmall['.'] = 1<<1;
+                toSmall['L'] = 1<<2;
+                
+                toBig[1] = '#';
+                toBig[2] = '.';
+                toBig[3] = 'L';
+
                 map = new byte[mapWidth * mapHeight];
                 int offset = 0;
 
@@ -88,7 +107,8 @@ public class Day11
                         // Grab char.
                         c = line.charAt(i);
 
-                        map[offset] = (byte)c;
+                        // Store a two copies - one in the hi order and one in the lo.
+                        map[offset] = (byte)((toSmall[c] << 4) | toSmall[c]);
                         offset++;
                     }
 
@@ -123,17 +143,32 @@ public class Day11
         int localStateChanges = 0;
         numOccupiedSeats = 0;
 
+        byte hashMask = toSmall['#'];
+        byte dotMask = toSmall['.'];
+        byte lMask = toSmall['L'];
+
+        byte shift;
+        if (!lo) {
+            // Read hi order bits but write to lo order.
+            shift = 0;
+            hashMask <<= 4;
+            dotMask <<= 4;
+            lMask <<= 4;
+        } else {
+            shift = 4;
+        }
+
         for (int i = 0; i < numCells; i++) {
 
             // Floor?
-            if (map[i] == '.')
+            if ((map[i] & dotMask) > 0)
                 continue;
 
             // Unoccupied?
-            if (map[i] == 'L') {
+            if ((map[i] & lMask) > 0) {
                 if (shouldOccupy(i)) {
 
-                    map[i] = '#' + 1;
+                    map[i] = (byte)(toSmall['#'] << shift);
                     localStateChanges++;
                     numOccupiedSeats++;
                     continue;
@@ -143,7 +178,7 @@ public class Day11
             // Occupied.
             else {
                 if (shouldVacate(i)) {
-                    map[i] = '#' - 1;
+                    map[i] = (byte)(toSmall['L'] << shift);
                     localStateChanges++;
                     continue;
                 }
@@ -154,6 +189,10 @@ public class Day11
 
         numStateChanges = localStateChanges;
 
+        // Flip to the opposite bit half for the next sim. This sim will write there.
+        lo = !lo;
+
+        /*
         if (localStateChanges > 0) {
             for (int i = 0; i < numCells; i++) {
 
@@ -166,6 +205,7 @@ public class Day11
                     map[i] = '#';
             }
         }
+        */
 
         return numStateChanges;
     }
@@ -192,6 +232,17 @@ public class Day11
         Iterate through 8 offset slopes until a SEAT is found, or the edge of the map is found.
         */
 
+        byte hashMask = toSmall['#'];
+        byte dotMask = toSmall['.'];
+        byte lMask = toSmall['L'];
+
+        if (!lo) {
+            // Read hi order bits but write to lo order.
+            hashMask <<= 4;
+            dotMask <<= 4;
+            lMask <<= 4;
+        }
+
         int passengers = 0;
 
         int[] xSlopes = new int[] { 1, 1, 0, -1, -1, -1,  0,  1 };
@@ -217,10 +268,10 @@ public class Day11
 
                 offset = y * mapWidth + x;
 
-                if (map[offset] == 'L')
+                if ((map[offset] & lMask) > 0)
                     break;
 
-                if (map[offset] == '#' || map[offset] == ('#' - 1)) {
+                if ((map[offset] & hashMask) > 0) {
                     passengers++;
                     if (passengers >= 5)
                         return passengers;
@@ -233,42 +284,6 @@ public class Day11
             x = seatX;
             y = seatY;
         }
-
-
-        /*
-        int passengers = 0;
-
-        int seatX = seatIdx % mapWidth;
-        int seatY = seatIdx / mapWidth;
-
-        int offset;
-
-        for (int y = seatY - 1; y <= seatY + 1; y++) {
-
-            if (y < 0)
-                continue;
-            else if (y >= mapHeight)
-                break;
-            
-            for (int x = seatX - 1; x <= seatX + 1; x++) {
-
-                if (x < 0)
-                    continue;
-                else if (x >= mapWidth)
-                    break;
-                else if (x == seatX && y == seatY)
-                    continue;
-
-                offset = y * mapWidth + x;
-
-                if (map[offset] == '#' || map[offset] == ('#' - 1)) {
-                    passengers++;
-                    if (passengers >= 4)
-                        return passengers;
-                }
-            }
-        }
-        */
         
         return passengers;
     }
@@ -276,12 +291,10 @@ public class Day11
     void display() {
 
         int rowStart;
-        int rowEnd;
 
         for (int y = 0; y < mapHeight; y++) {
 
             rowStart = y * mapWidth;
-            rowEnd = rowStart + mapWidth - 1;
 
             String row = new String(map, rowStart, mapWidth);
 
