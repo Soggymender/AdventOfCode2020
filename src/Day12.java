@@ -18,6 +18,9 @@ public class Day12
     int xDist = 0;
     int yDist = 0;
 
+    int xWaypoint = 10;
+    int yWaypoint = 1;
+
     String line;
 
     public static void main( String[] args )
@@ -43,7 +46,6 @@ public class Day12
         try{
             reader = new BufferedReader(new FileReader("day12_input.txt"));
 
-            Heading dir = Heading.E;
             int val = 0;
 
             String dirString;
@@ -59,35 +61,35 @@ public class Day12
                 switch (dirString) {
                     
                     case "N":
-                        move(Heading.N, val);                
+                        moveWaypoint(Heading.N, val);                
                         break;
 
                     case "E":
-                        move(Heading.E, val);
+                        moveWaypoint(Heading.E, val);
                         break;
 
                     case "S":
-                        move(Heading.S, val);
+                        moveWaypoint(Heading.S, val);
                         break;
 
                     case "W":
-                        move(Heading.W, val);
+                        moveWaypoint(Heading.W, val);
                         break;
 
                     case "L": {
-                        int angle = Heading.NUM_HEADINGS.ordinal() - val / 90;//Heading.NUM_HEADINGS.ordinal();
-                        dir = Heading.values()[(dir.ordinal() + angle) % Heading.NUM_HEADINGS.ordinal()];
+                        int angle = -val / 90;
+                        turnWaypoint(angle);
                         break;
                     }
 
                     case "R": {
-                        int angle = val / 90;//Heading.NUM_HEADINGS.ordinal();
-                        dir = Heading.values()[(dir.ordinal() + angle) % Heading.NUM_HEADINGS.ordinal() ];
+                        int angle = val / 90;
+                        turnWaypoint(angle);
                         break;
                     }
 
                     case "F":
-                        move(dir, val);
+                        move(val);
                         break;
 
                     default:
@@ -105,25 +107,51 @@ public class Day12
         }
     }
 
-    void move(Heading heading, int dist) {
+    void move(int dist) {
+            
+        xDist += xWaypoint * dist;
+        yDist += yWaypoint * dist;
+    }
+
+    void moveWaypoint(Heading heading, int dist) {
             
         switch (heading) {
                         
             case N:
-                yDist += dist;                        
+                yWaypoint += dist;                        
                 break;
 
             case E:
-                xDist += dist;
+                xWaypoint += dist;
                 break;
 
             case S:
-                yDist -= dist;
+                yWaypoint -= dist;
                 break;
 
             case W:
-                xDist -= dist;
+                xWaypoint -= dist;
                 break;
+        }
+    }
+    
+    void turnWaypoint(int turns) {
+
+        int temp;
+        while (turns > 0) {
+            temp = xWaypoint;
+            xWaypoint = yWaypoint;
+            yWaypoint = -temp;
+            
+            turns--;
+        }
+
+        while (turns < 0) {
+            temp = xWaypoint;
+            xWaypoint = -yWaypoint;
+            yWaypoint = temp;
+
+            turns++;
         }
     }
 }
