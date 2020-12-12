@@ -31,7 +31,7 @@ public class Day11
         while (true) {
             if (day11.simulate() == 0) 
                 break;
-                
+
             day11.display();    
         }
 
@@ -172,7 +172,7 @@ public class Day11
 
     boolean shouldOccupy(int seatIdx) {
 
-        if (countAdjacentPassengers(seatIdx) == 0)
+        if (countVisiblePassengers(seatIdx) == 0)
             return true;
 
         return false;
@@ -180,14 +180,62 @@ public class Day11
 
     boolean shouldVacate(int seatIdx) {
 
-        if (countAdjacentPassengers(seatIdx) >= 4)
+        if (countVisiblePassengers(seatIdx) >= 5)
             return true;
 
         return false;
     }
 
-    int countAdjacentPassengers(int seatIdx) {
+    int countVisiblePassengers(int seatIdx) {
 
+        /*
+        Iterate through 8 offset slopes until a SEAT is found, or the edge of the map is found.
+        */
+
+        int passengers = 0;
+
+        int[] xSlopes = new int[] { 1, 1, 0, -1, -1, -1,  0,  1 };
+        int[] ySlopes = new int[] { 0, 1, 1,  1,  0, -1, -1, -1 };
+
+        int seatX = seatIdx % mapWidth;
+        int seatY = seatIdx / mapWidth;
+
+        int x = seatX;
+        int y = seatY;
+
+        int offset;
+
+        for (int i = 0; i < 8; i++) {
+
+            while (true) {
+
+                x += xSlopes[i];
+                y += ySlopes[i];
+                
+                if (!(x >= 0 && x < mapWidth && y >= 0 && y < mapHeight))
+                    break;
+
+                offset = y * mapWidth + x;
+
+                if (map[offset] == 'L')
+                    break;
+
+                if (map[offset] == '#' || map[offset] == ('#' - 1)) {
+                    passengers++;
+                    if (passengers >= 5)
+                        return passengers;
+
+                    break;
+                }                
+
+            }
+
+            x = seatX;
+            y = seatY;
+        }
+
+
+        /*
         int passengers = 0;
 
         int seatX = seatIdx % mapWidth;
@@ -220,55 +268,8 @@ public class Day11
                 }
             }
         }
+        */
         
-
-
-
-
-        /*
-
-
-        int minIdx = seatIdx - mapWidth - 1;
-        int maxIdx = seatIdx + mapWidth + 1;
-
-        if (minIdx < 0) {
-            minIdx = 0;
-        } else if (maxIdx > numCells - 1)
-            maxIdx = numCells - 1;
-
-        int curIdx = minIdx;
-
-        int rowStartOffset = -1;
-        int rowEndOffset = 1;
-        int rowCount = 0;
-
-        if (seatIdx % mapWidth == 0) {
-            rowEndOffset = 0;
-        } else if (seatIdx % mapWidth == 1)
-            rowStartOffset = 0;
-
-        for (int i = curIdx; i <= maxIdx; i++) {
-
-            // Every 3 seats jump the index to the next row.
-            if (rowCount == 3) {
-                rowCount = 0;
-                i += mapWidth - 3 + rowStartOffset;
-            } else 
-                rowCount++;
-
-            if (i == seatIdx) {
-                continue;
-            }
-
-            if (map[i] == '#') {
-                passengers++;
-
-                // We don't care about >4 for Part 1.
-                if (passengers == 4)
-                    return passengers;
-            }
-        }
-*/
         return passengers;
     }
 
