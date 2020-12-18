@@ -11,12 +11,14 @@ public class Day17
     int xSize = 0;
     int ySize = 0;
     int zSize = 0;
+    int wSize = 0;
 
     // Offsets to get the starting slice in the center.
     int xOffset = 0; 
     int yOffset = 0;
 
     int sliceSize = 0;
+    int pileSize = 0;
 
     int numCells = 0;
     int numStateChanges = 0;
@@ -82,22 +84,24 @@ public class Day17
             xSize = startingSliceWidth + (numSteps * 2); // Account for growth + 1 per step in both directions.
             ySize = startingSliceHeight + (numSteps * 2); // "
             zSize = xSize;
+            wSize = xSize;
 
             sliceSize = xSize * ySize;
+            pileSize = sliceSize * wSize;
 
             xOffset = (xSize - startingSliceWidth) / 2;
             yOffset = (ySize - startingSliceHeight) / 2;
 
             {   
-                map1 = new boolean[xSize * ySize * zSize];
-                map2 = new boolean[xSize * ySize * zSize];
+                map1 = new boolean[xSize * ySize * zSize * wSize];
+                map2 = new boolean[xSize * ySize * zSize * wSize] ;
 
                 curMap = map1;
                 newMap = map2;
 
-                int offset = getOffset(xOffset, yOffset, zSize / 2);
+                int offset = getOffset(xOffset, yOffset, zSize / 2, wSize / 2);
 
-                numCells = xSize * ySize * zSize;
+                numCells = xSize * ySize * zSize * wSize;
 
                 reader = new BufferedReader(new FileReader("day17_input.txt"));
 
@@ -106,6 +110,7 @@ public class Day17
 
                 int curY = yOffset;
                 int curZ = zSize / 2;
+                int curW = wSize / 2;
 
                 // Count entries.
                 line = reader.readLine();
@@ -126,7 +131,7 @@ public class Day17
                     }
 
                     line = reader.readLine();
-                    offset = getOffset(xOffset, ++curY, curZ);
+                    offset = getOffset(xOffset, ++curY, curZ, curW);
                 }
             
                 reader.close();
@@ -137,9 +142,9 @@ public class Day17
         }
     }
 
-    int getOffset(int x, int y, int z)
+    int getOffset(int x, int y, int z, int w)
     {
-        int offset = (z * sliceSize) + (y * xSize) + x;
+        int offset = (w * pileSize) +  (z * sliceSize) + (y * xSize) + x;
         return offset;
     }
 
@@ -158,35 +163,38 @@ public class Day17
 
         int offset;
 
-        for (int z = 0; z < zSize; z++) {
+        for (int w = 0; w < wSize; w++) {
+        
+            for (int z = 0; z < zSize; z++) {
 
-            for (int y = 0; y < ySize; y++) {
+                for (int y = 0; y < ySize; y++) {
 
-                for (int x = 0; x < xSize; x++) {
+                    for (int x = 0; x < xSize; x++) {
 
-                    offset = getOffset(x, y, z);
-                    
-                    // Inactive?
-                    if (!curMap[offset]) {
-                        if (shouldActivate(offset)) {
+                        offset = getOffset(x, y, z, w);
+                        
+                        // Inactive?
+                        if (!curMap[offset]) {
+                            if (shouldActivate(x, y, z, w)) {
+                                numActiveCells++;
+                                newMap[offset] = true;
+                            } else {
+                                newMap[offset] = false;
+                            }
+
+                        } 
+                        
+                        // Occupied.
+                        else {
+                            if (shouldDeactivate(x, y, z, w)) {
+                                newMap[offset] = false;
+                                continue;
+                            } else {
+                                newMap[offset] = true;
+                            }
+
                             numActiveCells++;
-                            newMap[offset] = true;
-                        } else {
-                            newMap[offset] = false;
                         }
-
-                    } 
-                    
-                    // Occupied.
-                    else {
-                        if (shouldDeactivate(offset)) {
-                            newMap[offset] = false;
-                            continue;
-                        } else {
-                            newMap[offset] = true;
-                        }
-
-                        numActiveCells++;
                     }
                 }
             }
@@ -195,56 +203,57 @@ public class Day17
         return numActiveCells;
     }
 
-    boolean shouldActivate(int offset) {
+    boolean shouldActivate(int x, int y, int z, int w) {
 
-        if (countActiveNeighbors(offset) == 3)
+        if (countActiveNeighbors(x, y, z, w) == 3)
             return true;
 
         return false;
     }
 
-    boolean shouldDeactivate(int offset) {
+    boolean shouldDeactivate(int x, int y, int z, int w) {
 
-        int activeNeighbors = countActiveNeighbors(offset);
+        int activeNeighbors = countActiveNeighbors(x, y, z, w);
         if (activeNeighbors != 2 && activeNeighbors != 3)
             return true;
 
         return false;
     }
 
-    int countActiveNeighbors(int offset) {
+    int countActiveNeighbors(int x, int y, int z, int w) {
 
         int neighbors = 0;
 
-        int cellZ = offset / sliceSize;
-        int cellY = (offset - (cellZ * sliceSize)) / xSize;
-        int cellX = (offset - (cellZ *sliceSize) - (cellY * ySize));
-
-        int x = cellX - 1;
-        int y = cellY - 1;
-        int z = cellZ - 1;
+        int curX = x - 1;
+        int curY = y - 1;
+        int curZ = z - 1;
+        int curW = w - 1;
 
         int curOffset;
 
-        for (z = cellZ - 1; z <= cellZ + 1; z++) {
+        for (curW = w - 1; curW <= w + 1; curW++) {
 
-            for (y = cellY - 1; y <= cellY + 1; y++) {
+            for (curZ = z - 1; curZ <= z + 1; curZ++) {
 
-                for (x = cellX - 1; x <= cellX + 1; x++) {
+                for (curY = y - 1; curY <= y + 1; curY++) {
 
-                    if (x == cellX && y == cellY && z == cellZ)
-                        continue;
+                    for (curX = x - 1; curX <= x + 1; curX++) {
 
-                    if (x < 0 || x >= xSize ||
-                        y < 0 || y >= ySize ||
-                        z < 0 || z >= zSize) {
+                        if (curX == x && curY == y && curZ == z && curW == w)
                             continue;
-                        }
 
-                    curOffset = getOffset(x, y, z);
+                        if (curX < 0 || curX >= xSize ||
+                            curY < 0 || curY >= ySize ||
+                            curZ < 0 || curZ >= zSize ||
+                            curW < 0 || curW >= wSize) {
+                                continue;
+                            }
 
-                    if (curMap[curOffset])
-                        neighbors++;
+                        curOffset = getOffset(curX, curY, curZ, curW);
+
+                        if (curMap[curOffset])
+                            neighbors++;
+                    }
                 }
             }
         }
@@ -257,25 +266,29 @@ public class Day17
         int rowStart;
 
         System.out.println("\n\n\n SIM " + simCount);
-        for (int z = 0; z < zSize; z++) {
 
-            System.out.println("\nz = " + z);
+        for(int w = 0; w < wSize; w++) {
 
-            for (int y = 0; y < ySize; y++) {
+            for (int z = 0; z < zSize; z++) {
 
-                rowStart = (z * sliceSize) + (y * xSize);
+                System.out.println("\nz = " + z + ", w = " + w);
 
-                String row = new String();
-                
-                for (int x = 0; x < xSize; x++) {
-    
-                    if (newMap[rowStart + x])
-                        row += '#';
-                    else
-                        row += '.';
+                for (int y = 0; y < ySize; y++) {
+
+                    rowStart = (w * pileSize) + (z * sliceSize) + (y * xSize);
+
+                    String row = new String();
+                    
+                    for (int x = 0; x < xSize; x++) {
+        
+                        if (newMap[rowStart + x])
+                            row += '#';
+                        else
+                            row += '.';
+                    }
+
+                    System.out.println(row);
                 }
-
-                System.out.println(row);
             }
         }
     }
