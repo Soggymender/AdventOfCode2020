@@ -71,8 +71,6 @@ public class Day18
 
         boolean valReady = false;
 
-        Deque<Long> stack = new ArrayDeque<Long>();
-
         // Decode row.
         for (; state.pos < line.length(); state.pos++) {
 
@@ -91,10 +89,6 @@ public class Day18
             }
 
             if (c == ')') {
-                while (!stack.isEmpty()) {
-                    result *= stack.pop();
-                }
-        
                 return result;
             }
 
@@ -104,19 +98,9 @@ public class Day18
             }
 
             if (c == '*') {
-//                mul = true;
-
-                // Not now.
-                stack.push(result);
-                result = 0;
-
+                mul = true;
                 continue;
             }
-
-            //if (!add && !mul && !stack.isEmpty()) {
-            //    result = stack.pop();
-            //    mul = true;
-            //}
 
             if (!valReady)
                 val = c - '0';
@@ -130,10 +114,6 @@ public class Day18
             } else {
                 result = val;
             }
-        }
-
-        while (!stack.isEmpty()) {
-            result *= stack.pop();
         }
 
         return result;
