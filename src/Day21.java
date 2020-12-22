@@ -11,19 +11,14 @@ class Dish
 {   
     Set<String> ingredientNames = new HashSet<String>();
     Set<String> allergenNames = new HashSet<String>();
-
-    List<Ingredient> ingredients = new ArrayList<Ingredient>();
-}
-
-class Ingredient
-{
-    String name;
-    Set<String> allergenNames = new HashSet<String>();
 }
 
 public class Day21
 {
     List<Dish> dishes = new ArrayList<Dish>();
+
+    HashMap<String, String> allergensToIngredients = new HashMap<String, String>();
+    List<String> allAllergens = new ArrayList<String>();
 
     public static void main( String[] args )
     {
@@ -34,6 +29,7 @@ public class Day21
         dayN.read();
         dayN.pairDown();
         int result = dayN.tally();
+        dayN.buildBadList();
 
         System.out.println(result);
 
@@ -65,17 +61,10 @@ public class Day21
 
                 for (int i = 0; i < ingredients.length; i++) {
 
-                    Ingredient ingredient = new Ingredient();
-                    dish.ingredients.add(ingredient);
-
-                    ingredient.name = ingredients[i];
-
-                    dish.ingredientNames.add(ingredient.name);
+                    dish.ingredientNames.add(ingredients[i]);
 
                     for (int j = 1; j < allergens.length; j++) {
                         dish.allergenNames.add(allergens[j]);
-            
-                        ingredient.allergenNames.add(allergens[j]);
                     }
                 }
 
@@ -91,94 +80,135 @@ public class Day21
 
     void pairDown() {
 
-        for (Dish dish : dishes) {
+        /*
+        while some ingredients marked safe
 
-            for (Ingredient ingredient : dish.ingredients) {
+            for each dish alergen
+            find other dishes with same allergen
+            see if there is ONE ingredient in all dishes
+                mark that ingredient with the allergen
+                add allergen to identified list
+                add word to identified list
+        */
 
-                Set<String> toRemove = new HashSet<String>();
+        Set<String> ingredientsToRemove = new HashSet<String>();
+        Set<String> allergensToRemove = new HashSet<String>();
 
-                for (String allergen : ingredient.allergenNames) {
+        do {
 
-                    // If this allergen is listed in another food,
-                    // but this ingredient is not, this allergen is not in this ingredient.
+            ingredientsToRemove.clear();
+            allergensToRemove.clear();
 
-                    boolean foundAllergen = false;
-                    boolean foundIngredient = false;
+            // Iterate the dishes.
+            for (Dish dish : dishes) {
+                
+                // Iterate the allergens.
+                for (String allergen : dish.allergenNames) {
 
-                    for (Dish iDish : dishes) {
-                        if (iDish == dish)
-                            continue;
-                        
-                        for (String dishAllergen : iDish.allergenNames) {
+                    Set<String> ingredientsInAll = new HashSet<String>();
 
-                            // This dish also contains the allergen.
-                            if (dishAllergen.equals(allergen)) {
+                    // Iterate the ingredients.
+                    for (String ingredient : dish.ingredientNames) {
 
-                                foundAllergen = true;
+                        boolean inAll = true;
 
-                                // Check this dish's ingredients.
-                                if (iDish.ingredientNames.contains(ingredient.name)) {
-                                    foundIngredient = true;
-                                    break;
-                                }
+                        // Iterate the dishes.
+                        for (Dish iDish : dishes) {
+
+                            // Check if this dish has the allergen.
+                            if (!iDish.allergenNames.contains(allergen))
+                                continue;
+
+                            // Check if this dish has the ingredient.
+                            if (!iDish.ingredientNames.contains(ingredient)) {
+                                inAll = false;
+                                break;
                             }
                         }
 
-                        if (foundIngredient)
-                            break;
+                        if (inAll) {
+                                
+                            // This ingredient is in all.
+                            // It's a candidate for removal. But are there others?
+                            ingredientsInAll.add(ingredient);
+                        }
                     }
 
-                    if (foundAllergen && !foundIngredient) {
-                        toRemove.add(allergen);
+                    // If there's only one ingredient in all of the dishes with this allergen
+                    // then the ingredient and allergen can be removed from the entire menu and we can start over.
+                    if (ingredientsInAll.size() == 1) {
+                        ingredientsToRemove.add((String)ingredientsInAll.toArray()[0]);
+                        allergensToRemove.add(allergen);
+
+                        // For part 2, store the allergen and the food that contains it.
+                        allergensToIngredients.put(allergen, (String)ingredientsInAll.toArray()[0]);
+                        
+                        if (!allAllergens.contains(allergen))
+                            allAllergens.add(allergen);
                     }
                 }
-
-                for (String allergen : toRemove)
-                    ingredient.allergenNames.remove(allergen);
             }
-        }
+
+            // Remove identified ingredients and allergens from the menu.
+            for (Dish dish : dishes) {
+
+                for (String ingredient : ingredientsToRemove)
+                    dish.ingredientNames.remove(ingredient);
+                
+                for (String allergen : allergensToRemove)
+                    dish.allergenNames.remove(allergen);    
+            }
+
+        } while (ingredientsToRemove.size() > 0);
     }
 
     int tally() {
 
         int total = 0;
 
-        Set<String>safeIngredients = new HashSet<String>();
+        HashMap<String, Integer>safeIngredients = new HashMap<String, Integer>();
 
         // Iterate the dishes.
         for (Dish dish : dishes) {
 
             // Iterate the ingredients.
-            for (Ingredient ingredient : dish.ingredients) {
+            for (String ingredient : dish.ingredientNames) {
 
-                boolean empty = true;
-                // If this ingredient does not have allergens
-                for (String allergen : ingredient.allergenNames) {
-                    // Add it to a list.
-                    if (allergen.length() > 0) {
-                        empty = false;
-                        break;
-                    }
+                if (safeIngredients.containsKey(ingredient)) {
+                    Integer val = safeIngredients.get(ingredient);
+                    safeIngredients.replace(ingredient, val + 1);
+                } else {
+                    safeIngredients.put(ingredient, 1); 
                 }
-
-                if (empty) {
-                    safeIngredients.add(ingredient.name);
-                }//// else if (safeIngredients.contains(ingredient.name))
-                 //   safeIngredients.remove(ingredient.name);
             }
         }
 
         // Count how many times each listed ingredient is in a dish.
-        for (String safeIngredient : safeIngredients) {
+        for (String safeIngredient : safeIngredients.keySet()) {
 
             System.out.println(safeIngredient);
-
-            for (Dish dish : dishes) {
-                if (dish.ingredientNames.contains(safeIngredient))
-                    total++;
-            }
+            total += safeIngredients.get(safeIngredient);
         }
 
         return total;
+    }
+
+    void buildBadList()
+    {
+        Collections.sort(allAllergens);
+        
+        String badList = "";
+
+        for (String allergen : allAllergens) {
+
+            String ingredient = allergensToIngredients.get(allergen);
+            
+            if (badList.length() > 0)
+                badList += ",";
+                
+            badList += ingredient;
+        }
+        
+        System.out.println(badList);
     }
 }
