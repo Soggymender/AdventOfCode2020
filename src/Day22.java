@@ -11,49 +11,43 @@ class Game
     List<Integer> deck1 = null;
     List<Integer> deck2 = null;
 
+    // These are actually hashes of the start-of-round decks.
+    // Totals would be non-commutative, and deck matching is card-order-dependent.
     List<Integer> deck1RoundTotals = new ArrayList<Integer>();
     List<Integer> deck2RoundTotals = new ArrayList<Integer>();
+
+    // Hash generator for a deck of cards.
+    // Saves storing and iterating a whole deck for each round.
+    // Has to be rebuilt per round because the cards change.
+    int hash(List<Integer> deck)
+    {
+        int hash = 0;
+
+        for (Integer card1 : deck1)
+            hash = (hash << 5) - hash + card1.intValue();
+
+        return hash;
+    }
 
     int play() {
 
         // Start off playing a normal game.
         while (deck1.size() > 0 && deck2.size() > 0) {
 
-            // For the per-round decks I generate a string and get the hashCode.
-            // I could either do this manually, or i could store the current string and append to it
-            // or both. I'll try that later and see if it can be faster.
-            // This code is basically first pass. I went straight to the hashCode because
-            // I did not want the complexity of dealing with arrays of arrays.
-
             // Calculate deck totals.
-            int deckTotal1 = 0;
-            String deck1TotalString = new String();  
-            for (Integer card1 : deck1) {
-                deck1TotalString += (char)card1.intValue();
-            }
-
-            int deckTotal2 = 0;
-            String deck2TotalString = new String();
-            for (Integer card2 : deck2) {
-                deck2TotalString += (char)card2.intValue();
-            }
+            int deck1Hash = hash(deck1);
+            int deck2Hash = hash(deck2);
 
             // Check for player 1 sub-game insta-win.
-            for (Integer total1 : deck1RoundTotals) {
-                if (deck1TotalString.hashCode() == total1) {
+            for (int i = 0; i < deck1RoundTotals.size(); i++) {
+                if (deck1Hash == deck1RoundTotals.get(i) ||
+                    deck2Hash == deck2RoundTotals.get(i))
                     return 1;
-                }
-            }
-    
-            for (Integer total2 : deck2RoundTotals) {
-                if (deck2TotalString.hashCode() == total2) {
-                    return 1;
-                }
             }
 
             // Store totals.
-            deck1RoundTotals.add(deck1TotalString.hashCode());
-            deck2RoundTotals.add(deck2TotalString.hashCode());            
+            deck1RoundTotals.add(deck1Hash);
+            deck2RoundTotals.add(deck2Hash);            
 
             Integer draw1 = deck1.remove(0);
             Integer draw2 = deck2.remove(0);
@@ -62,15 +56,17 @@ class Game
 
             // Can we start a new sub-game?
             if (draw1 <= deck1.size() && draw2 <= deck2.size()) {    
-                        
+               
+                
                 // Duplicate the decks.
                 Game subGame = new Game();
                 subGame.deck1 = new ArrayList<Integer>();
+                subGame.deck2 = new ArrayList<Integer>();
+
                 for (int i = 0; i < draw1; i++) {
                     subGame.deck1.add(deck1.get(i));
                 }
 
-                subGame.deck2 = new ArrayList<Integer>();
                 for (int i = 0; i < draw2; i++) {
                     subGame.deck2.add(deck2.get(i));
                 }
@@ -170,24 +166,12 @@ public class Day22
         }
     }
 
-    /*
-        for each round store the starting deck.
-
-        if either player had this deck before player 1 wins game.
-
-        draw
-
-        if either card count < card value
-            highest card wins round.
-
-
-    */
-
     int calculateScore() {
 
         int total = 0;
         int scalar = 1;
 
+        // Only one of these will run.
         while (rootGame.deck1.size() > 0) {
             total += scalar * rootGame.deck1.remove(rootGame.deck1.size() - 1);
             scalar++;
@@ -199,6 +183,5 @@ public class Day22
         }
 
         return total;
-
     }
 }
